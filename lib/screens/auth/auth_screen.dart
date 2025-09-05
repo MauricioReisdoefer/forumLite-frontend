@@ -6,6 +6,7 @@ import 'bloc/register_state.dart';
 import 'bloc/login_bloc.dart';
 import 'bloc/login_event.dart';
 import 'bloc/login_state.dart';
+import 'package:forumlite/screens/main/main_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -33,22 +34,48 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => RegisterBloc(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => RegisterBloc()),
+        BlocProvider(create: (_) => LoginBloc()),
+      ],
       child: Scaffold(
         appBar: AppBar(title: const Text("Autenticação")),
-        body: BlocListener<RegisterBloc, RegisterState>(
-          listener: (context, state) {
-            if (state is RegisterSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Usuário registrado com sucesso!")),
-              );
-            } else if (state is RegisterFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
-            }
-          },
+        body: MultiBlocListener(
+          listeners: [
+            BlocListener<RegisterBloc, RegisterState>(
+              listener: (context, state) {
+                if (state is RegisterSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Usuário registrado com sucesso!")),
+                  );
+                } else if (state is RegisterFailure) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.message)),
+                  );
+                }
+              },
+            ),
+            BlocListener<LoginBloc, LoginState>(
+              listener: (context, state) {
+                if (state is LoginSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Login bem-sucedido!")),
+                  );
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TopicsScreen(),
+                    ),
+                  );
+                } else if (state is LoginFailure) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.message)),
+                  );
+                }
+              },
+            ),
+          ],
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -66,8 +93,6 @@ class _AuthScreenState extends State<AuthScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-
-                // Mostra o card conforme o toggle
                 if (mostrarRegistro) _buildRegistroCard(),
                 if (!mostrarRegistro) _buildLoginCard(),
               ],
@@ -78,7 +103,6 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  // Botão do toggle estilizado
   Widget _buildToggleButton(
       String texto, bool ativo, VoidCallback onPressed) {
     return Expanded(
@@ -98,7 +122,6 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  // Card de Registro
   Widget _buildRegistroCard() {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -141,8 +164,6 @@ class _AuthScreenState extends State<AuthScreen> {
               obscureText: true,
             ),
             const SizedBox(height: 24),
-
-            // Botão que dispara o evento do Bloc
             BlocBuilder<RegisterBloc, RegisterState>(
               builder: (context, state) {
                 if (state is RegisterInitial) {
@@ -191,90 +212,69 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  // Card de Login (ainda sem Bloc)
   Widget _buildLoginCard() {
-    return BlocProvider(
-      create: (_) => LoginBloc(),
-      child: BlocListener<LoginBloc, LoginState>(
-        listener: (context, state) {
-          if (state is LoginSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Login bem-sucedido!")),
-            );
-            //""
-            // FUTURELY NAVIGATE TO NEW PAGE
-            // 
-          } else if (state is LoginFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
-          }
-        },
-        child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 6,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  "Login",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: loginUsernameController,
-                  decoration: const InputDecoration(
-                    labelText: "Username",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  controller: loginPasswordController,
-                  decoration: const InputDecoration(
-                    labelText: "Password",
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                ),
-                const SizedBox(height: 24),
-                BlocBuilder<LoginBloc, LoginState>(
-                  builder: (context, state) {
-                    if (state is LoginInitial || state is LoginFailure) {
-                      return ElevatedButton(
-                        onPressed: () {
-                          context.read<LoginBloc>().add(
-                                LoginSubmittedEvent(
-                                  username: loginUsernameController.text,
-                                  password: loginPasswordController.text,
-                                ),
-                              );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: const Text("Entrar"),
-                      );
-                    } else if (state is LoginLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (state is LoginSuccess) {
-                      return const Center(child: Text("Login concluído!"));
-                    } else {
-                      return const SizedBox.shrink();
-                    }
-                  },
-                ),
-              ],
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 6,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              "Login",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
             ),
-          ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: loginUsernameController,
+              decoration: const InputDecoration(
+                labelText: "Username",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: loginPasswordController,
+              decoration: const InputDecoration(
+                labelText: "Password",
+                border: OutlineInputBorder(),
+              ),
+              obscureText: true,
+            ),
+            const SizedBox(height: 24),
+            BlocBuilder<LoginBloc, LoginState>(
+              builder: (context, state) {
+                if (state is LoginInitial || state is LoginFailure) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      context.read<LoginBloc>().add(
+                            LoginSubmittedEvent(
+                              username: loginUsernameController.text,
+                              password: loginPasswordController.text,
+                            ),
+                          );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("Entrar"),
+                  );
+                } else if (state is LoginLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (state is LoginSuccess) {
+                  return const Center(child: Text("Login concluído!"));
+                } else {
+                  return const SizedBox.shrink();
+                }
+              },
+            ),
+          ],
         ),
       ),
     );
   }
-
 }
