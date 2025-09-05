@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'register_event.dart';
@@ -34,10 +35,13 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
 
       final response = await http.post(
         Uri.parse("$apiUrl/users/create"),
-        body: {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
           "username": event.name,
           "password": event.password,
-        },
+        }),
       );
 
       if (response.statusCode == 200) {
